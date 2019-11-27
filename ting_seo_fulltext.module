@@ -1,0 +1,53 @@
+<?php
+
+/**
+ * @file
+ * Ting expansion search module main file.
+ */
+
+
+
+function ting_seo_fulltext_menu() {
+  $items = array();
+  $items['ting/fulltext/ajax'] = array(
+    'title' => 'Retrieves review off the object',
+    'page callback' => 'ting_seo_fulltext_get_review',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ *
+ * It simply tells panels where to find the .inc files that define various
+ * args, contexts, content_types.
+ */
+function ting_seo_fulltext_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ctools' && !empty($plugin)) {
+    return "plugins/$plugin";
+  }
+}
+
+function ting_seo_fulltext_get_review($object_id) {
+  try {
+    $path = drupal_get_path('module', 'ting_fulltext');
+    // Include functions to parse the xml.
+    include_once $path . '/includes/ting_fulltext.pages.inc';
+    
+    $xml = ting_fulltext_object_load($object_id);
+
+    $results = array(
+      '#theme' => 'ting_fulltext',
+      '#fields' => ting_fulltext_parse($xml),
+    );
+    $output = drupal_render($results);
+
+    return drupal_json_output($output );
+  } catch (Exception $e) {
+    watchdog('ting_seo_fulltext', 'Fetching review object failed: ' . $e->getMessage());
+    return drupal_json_output('');
+  }
+}
