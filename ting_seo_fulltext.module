@@ -51,3 +51,61 @@ function ting_seo_fulltext_get_review($object_id) {
     return drupal_json_output('');
   }
 }
+
+/**
+ * Implements hook_ding_entity_view().
+ */
+function ting_seo_fulltext_ding_entity_view($object, $view_mode) {
+  $entity_path = entity_uri('ting_object', $object)['path'];
+  // The page parametes for the ting object view should only be added on the
+  // full page view for the material.
+  if ($view_mode == 'full' && current_path() == $entity_path) {
+    $urlAlias = drupal_lookup_path('alias',current_path());
+    //file_put_contents("/var/www/drupal7vm/drupal/debug/path4.txt", print_r($urlAlias , TRUE), FILE_APPEND);
+
+    if ($urlAlias == '') {
+      $title = ting_seo_fulltext_get_title($object);
+      $type = ting_seo_fulltext_get_type($object);
+      $creator = ting_seo_fulltext_get_creator($object);
+      if (!empty($type) && !empty($title)) {
+        $new_url = $type . $creator . $title;
+        //file_put_contents("/var/www/drupal7vm/drupal/debug/path6.txt", print_r($new_url, TRUE), FILE_APPEND);
+        $path = array("source" => $entity_path, "alias" => $new_url);
+        path_save($path);
+      }
+    }
+  }
+}
+
+function ting_seo_fulltext_get_type($object) {
+  $type= $object->getType();
+  $part = explode('(', $type);
+  $formatted_type = str_replace(' ', '_', trim($part[0]));
+  $encoded_type = rawurlencode($formatted_type);
+  //file_put_contents("/var/www/drupal7vm/drupal/debug/path7.txt", print_r($encoded_type  , TRUE), FILE_APPEND);
+  return $encoded_type ;
+}
+
+function ting_seo_fulltext_get_title($object) {
+  $title = $object->getTitle();
+  $formatted_title = str_replace(' ', '_', trim($title));
+  $encoded_title = rawurlencode($formatted_title);
+  //file_put_contents("/var/www/drupal7vm/drupal/debug/path8.txt", print_r($encoded_title  , TRUE), FILE_APPEND);
+  return '/' . $encoded_title;
+}
+
+function ting_seo_fulltext_get_creator($object) {
+  $creators = $object->getCreators();
+  //file_put_contents("/var/www/drupal7vm/drupal/debug/path10.txt", print_r($creators, TRUE), FILE_APPEND);
+  if (isset($creators) && !empty($creators)) {
+    $formatted_creator = str_replace(' ', '_', trim($creators[0]));
+    $encoded_creator = rawurlencode($formatted_creator);
+    //file_put_contents("/var/www/drupal7vm/drupal/debug/path9.txt", print_r($encoded_creator, TRUE), FILE_APPEND);
+    return '/' . $encoded_creator;
+  }
+  return '';
+}
+
+function ting_seo_fulltext_get_subject($object) {
+  
+}
